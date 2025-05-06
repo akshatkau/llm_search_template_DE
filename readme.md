@@ -25,9 +25,9 @@ llm_search_template/
 ├── streamlit_app/ # Streamlit frontend
 │ └── app.py # User interface
 │
-├── .env.example # Example environment config (no secrets)
+├── .env.example # Example environment config
 ├── requirements.txt # Dependencies
-└── README.md # You are here
+└── README.md
 ```
 
 
