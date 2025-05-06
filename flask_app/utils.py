@@ -1,0 +1,181 @@
+import os
+import requests
+from bs4 import BeautifulSoup
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Load API keys from environment variables
+SEARCH_API_KEY = os.getenv("SEARCH_API_KEY")
+SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+
+_prompt_template = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant that answers questions based on web content and real-time information. Always include sources or links when relevant."),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{input}")
+])
+
+# ---------------------- LLM + Memory --------------------------
+_llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7, openai_api_key=OPENAI_API_KEY)
+
+_session_histories = {}
+
+_chat_with_memory = RunnableWithMessageHistory(
+    _prompt_template | _llm,
+    lambda session_id: _session_histories.setdefault(session_id, ChatMessageHistory()),
+    input_messages_key="input",
+    history_messages_key="chat_history"
+)
+
+
+def search_articles(query, num_results=3):
+    """
+    Uses Google Custom Search API to get relevant article links.
+    Returns a list of result URLs.
+    """
+    url = f"https://www.googleapis.com/customsearch/v1"
+    
+    print(f"Search API Key present: {bool(SEARCH_API_KEY)}")
+    if SEARCH_API_KEY:
+        print(f"Search API Key starts with: {SEARCH_API_KEY[:5]}...")
+    else:
+        print("WARNING: Search API Key is missing!")
+        
+    print(f"Search Engine ID present: {bool(SEARCH_ENGINE_ID)}")
+    if SEARCH_ENGINE_ID:
+        print(f"Search Engine ID starts with: {SEARCH_ENGINE_ID[:5]}...")
+    else:
+        print("WARNING: Search Engine ID is missing!")
+    
+    params = {
+        "key": SEARCH_API_KEY,
+        "cx": SEARCH_ENGINE_ID,
+        "q": query,
+        "num": num_results,
+        "dateRestrict": "d1",
+        "sort": "date"
+    }
+
+    try:
+        print(f"Sending search request to Google API for query: '{query}'")
+        response = requests.get(url, params=params)
+        print(f"Search API Response Code: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"Error response from Search API: {response.text[:500]}")
+            return []
+            
+        data = response.json()
+        print(f"Response keys: {list(data.keys())}")
+        
+        if "items" not in data:
+            print(f"No 'items' found in response. Full response: {data}")
+            if "error" in data:
+                print(f"API returned error: {data['error']}")
+            return []
+        
+        print(f"Found {len(data['items'])} search results")
+        
+        articles = []
+        for i, item in enumerate(data.get("items", [])):
+            title = item.get("title", "No Title")
+            link = item.get("link", "No Link")
+            print(f"Result {i+1}: {title} - {link}")
+            articles.append({"title": title, "link": link})
+
+        return articles
+        
+    except Exception as e:
+        print(f"Exception in search_articles: {type(e).__name__}: {str(e)}")
+        return []
+
+
+def fetch_article_content(url):
+    """
+    Scrapes the given URL and extracts headings and paragraph text.
+    """
+    try:
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        content = ""
+        for tag in soup.find_all(["h1", "h2", "h3", "p"]):
+            text = tag.get_text(strip=True)
+            if text:
+                content += text + "\n"
+
+        return content.strip()
+    except Exception as e:
+        print(f"Failed to fetch {url}: {e}")
+        return ""
+
+
+def concatenate_content(articles):
+    """
+    Fetches and combines content from all article URLs.
+    """
+    full_text = ""
+    for article in articles:
+        print(f"Scraping: {article['link']}")
+        article_text = fetch_article_content(article["link"])
+        full_text += f"\n\n### {article['title']}\n{article_text}"
+    return full_text
+
+
+def generate_flexible_answer(query: str, session_id: str = "default", content: str = None) -> str:
+    """
+    Generates an answer using either:
+    - memory-based chat if `content` is None
+    - context-aware (scraped content) generation if `content` is provided
+    """
+    try:
+        # If content is passed → use content-based OpenAI call
+        if content:
+            prompt = f"""You are a helpful assistant. Based on the information below, answer the question clearly.
+Always include the source of your information by citing the article titles at the end of your response. Add links to the articles if possible.
+
+---CONTENT---
+{content}
+
+---QUESTION---
+{query}
+"""
+            headers = {
+                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 500,
+                "temperature": 0.7
+            }
+
+            print("Sending static OpenAI API request...")
+            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"].strip()
+
+        # Else → use memory-based conversation
+        else:
+            print("Using memory-based assistant with RunnableWithMessageHistory...")
+            response = _chat_with_memory.invoke(
+                {"input": query},
+                config={"configurable": {"session_id": session_id}}
+            )
+            return response.content
+
+    except Exception as e:
+        print("Error in generate_flexible_answer:", str(e))
+        return "Sorry, I encountered an error while generating the response."
