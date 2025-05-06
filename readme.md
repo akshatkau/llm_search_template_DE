@@ -15,7 +15,7 @@ This project is a **Retrieval-Augmented Generation (RAG)** application powered b
 ---
 
 ## 📁 Project Structure
-
+```text
 llm_search_template/
 │
 ├── flask_app/ # Backend Flask app
@@ -28,6 +28,7 @@ llm_search_template/
 ├── .env.example # Example environment config (no secrets)
 ├── requirements.txt # Dependencies
 └── README.md # You are here
+```
 
 
 ---
