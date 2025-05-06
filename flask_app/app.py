@@ -12,7 +12,7 @@ memory = ConversationBufferMemory(memory_key="chat_history", return_messages=Tru
 def query():
     data = request.json
     user_query = data.get("query")
-    session_id = data.get("session_id", "default")  # unique per user/session
+    session_id = data.get("session_id", "default")
 
     if not user_query:
         return jsonify({"error": "No query provided"}), 400
