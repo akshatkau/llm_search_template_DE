@@ -1,14 +1,7 @@
-# Ignore Python virtual environments
 .venv/
 venv/
-
-# Byte-compiled / cache
 __pycache__/
 *.py[cod]
 *.pyo
-
-# Environment files
 .env
-
-# VS Code
 .vscode/
