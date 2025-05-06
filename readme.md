@@ -6,11 +6,11 @@ This project is a **Retrieval-Augmented Generation (RAG)** application powered b
 
 ## 🚀 Features
 
-- 🔎 Search the web for recent articles related to a query
-- 🧠 Uses scraped article content to answer contextually
-- 🗣️ Maintains conversation history (memory) using LangChain
-- 🔄 Supports **Together API** (Mistral) for LLM responses
-- 🖥️ Simple, clean UI with Streamlit
+- Search the web for recent articles related to a query
+- Uses scraped article content to answer contextually
+- Maintains conversation history (memory) using LangChain
+- Supports **Together API** (Mistral) for LLM responses
+- Simple, clean UI with Streamlit
 
 ---
 
@@ -83,7 +83,7 @@ cd streamlit_app
 streamlit run app.py
 ```
 
-##💡 How It Works
+## 💡 How It Works
 -User enters a query in Streamlit UI
 
 -Flask API receives it and performs:
