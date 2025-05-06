@@ -3,10 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from langchain_openai import ChatOpenAI
 from langchain_together import ChatTogether
-
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 from langchain.chains import LLMChain
-
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from dotenv import load_dotenv
