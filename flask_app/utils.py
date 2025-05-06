@@ -47,12 +47,7 @@ _chat_with_memory = RunnableWithMessageHistory(
 )
 
 
-def get_yesterday_query(original_query: str) -> str:
-    """
-    Appends a date filter to the original query to only get articles from yesterday.
-    """
-    yesterday = date.today() - timedelta(days=1)
-    return f"{original_query} after:{yesterday.isoformat()} before:{(yesterday + timedelta(days=1)).isoformat()}"
+
 
 def search_articles(query, num_results=5):
     """
@@ -61,8 +56,6 @@ def search_articles(query, num_results=5):
     """
     url = "https://www.googleapis.com/customsearch/v1"
 
-    # Apply date filter to query
-    query_with_date = get_yesterday_query(query)
 
     print(f"Search API Key present: {bool(SEARCH_API_KEY)}")
     if SEARCH_API_KEY:
@@ -79,12 +72,11 @@ def search_articles(query, num_results=5):
     params = {
         "key": SEARCH_API_KEY,
         "cx": SEARCH_ENGINE_ID,
-        "q": query_with_date,
         "num": num_results,
     }
 
     try:
-        print(f"Sending search request to Google API for query: '{query_with_date}'")
+        print(f"Sending search request to Google API for query")
         response = requests.get(url, params=params)
         print(f"Search API Response Code: {response.status_code}")
 
