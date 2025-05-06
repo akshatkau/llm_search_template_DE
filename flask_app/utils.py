@@ -27,7 +27,10 @@ _prompt_template = ChatPromptTemplate.from_messages([
     ("human", "{input}")
 ])
 
-#_llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7, openai_api_key=OPENAI_API_KEY)
+# _llm = ChatOpenAI(
+#     model="gpt-3.5-turbo", 
+#     temperature=0.7, 
+#     openai_api_key=OPENAI_API_KEY)
 
 _llm = ChatTogether(
     model="mistralai/Mistral-7B-Instruct-v0.2",
