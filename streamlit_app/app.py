@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-# --- App Title and Description ---
+#App Title
 st.set_page_config(page_title="LLM-based RAG Search", page_icon="🔍")
 st.title("🔍 LLM-based RAG Search")
 
@@ -9,7 +9,7 @@ st.markdown("""
 Welcome to the **LLM-based Retrieval-Augmented Generation (RAG)** system!  
 This app allows you to ask any question and get a response based on web content.""")
 
-# --- Sidebar Info ---
+#Sidebar Info
 with st.sidebar:
     st.header("🧠 How it Works")
     st.markdown("""
@@ -23,7 +23,7 @@ with st.sidebar:
     Make sure the Flask backend is running at `http://localhost:5001`.
     """)
 
-# --- Query Box ---
+#Query
 query = st.text_input("💬 Enter your query:")
 
 if st.button("Search"):
