@@ -167,7 +167,7 @@ Always include the source of your information by citing the article titles at th
             }
 
             payload = {
-                "model": "mistralai/Mistral-7B-Instruct-v0.2",
+                "model": "mistralai/Mistral-7B-Instruct-v0.2", #change this to the model you want to use or open ai model
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": prompt}
