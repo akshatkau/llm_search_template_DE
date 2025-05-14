@@ -153,11 +153,14 @@ def generate_flexible_answer(query: str, session_id: str = "default", content: s
     """
     try:
         if content:
+            max_chars = 3000
+            trimmed_content = content[:max_chars]
+
             prompt = f"""You are a helpful assistant. Based on the information below, answer the question clearly.
 You can share the news if asked for it. Always include the source of your information by citing the article titles at the end of your response. Add links to the articles if possible.
 
 ---CONTENT---
-{content}
+{trimmed_content}
 
 ---QUESTION---
 {query}
@@ -177,7 +180,7 @@ You can share the news if asked for it. Always include the source of your inform
                 "temperature": 0.7
             }
 
-            print("Sending static Together API request...")
+            print("Sending Together API request with context...")
             response = requests.post("https://api.together.xyz/v1/chat/completions", headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
@@ -194,4 +197,5 @@ You can share the news if asked for it. Always include the source of your inform
     except Exception as e:
         print("Error in generate_flexible_answer:", str(e))
         return "Sorry, I encountered an error while generating the response."
+
 
