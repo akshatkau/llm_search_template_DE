@@ -3,8 +3,10 @@ import requests
 from bs4 import BeautifulSoup
 from langchain_openai import ChatOpenAI
 from langchain_together import ChatTogether
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, PromptTemplate
 from langchain.chains import LLMChain
+
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.memory.chat_message_histories.in_memory import ChatMessageHistory
 from dotenv import load_dotenv
@@ -73,6 +75,7 @@ def search_articles(query, num_results=5):
     params = {
         "key": SEARCH_API_KEY,
         "cx": SEARCH_ENGINE_ID,
+        "q": query,
         "num": num_results,
     }
 
@@ -150,8 +153,8 @@ def generate_flexible_answer(query: str, session_id: str = "default", content: s
     """
     try:
         if content:
-            prompt = f"""You are a helpful assistant. Based on the information below, answer the question clearly.You can share the news if asked for it.
-Always include the source of your information by citing the article titles at the end of your response. Add links to the articles if possible.
+            prompt = f"""You are a helpful assistant. Based on the information below, answer the question clearly.
+You can share the news if asked for it. Always include the source of your information by citing the article titles at the end of your response. Add links to the articles if possible.
 
 ---CONTENT---
 {content}
@@ -160,12 +163,12 @@ Always include the source of your information by citing the article titles at th
 {query}
 """
             headers = {
-                "Authorization": f"Bearer {os.getenv('TOGETHER_API_KEY')}",
+                "Authorization": f"Bearer {TOGETHER_API_KEY}",
                 "Content-Type": "application/json"
             }
 
             payload = {
-                "model": "mistralai/Mistral-7B-Instruct-v0.2", #change this to the model you want to use or open ai model
+                "model": "mistralai/Mistral-7B-Instruct-v0.2",
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": prompt}
@@ -174,8 +177,8 @@ Always include the source of your information by citing the article titles at th
                 "temperature": 0.7
             }
 
-            print("Sending static OpenAI API request...")
-            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+            print("Sending static Together API request...")
+            response = requests.post("https://api.together.xyz/v1/chat/completions", headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"].strip()
@@ -191,3 +194,4 @@ Always include the source of your information by citing the article titles at th
     except Exception as e:
         print("Error in generate_flexible_answer:", str(e))
         return "Sorry, I encountered an error while generating the response."
+
