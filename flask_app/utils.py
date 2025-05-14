@@ -147,55 +147,47 @@ def concatenate_content(articles):
 
 def generate_flexible_answer(query: str, session_id: str = "default", content: str = None) -> str:
     """
-    Generates an answer using either:
-    - memory-based chat if `content` is None
-    - context-aware (scraped content) generation if `content` is provided
+    Generates an answer using:
+    - memory-based chat with context injection if `content` is provided
+    - otherwise, regular memory-based conversation
     """
     try:
-        if content:
+        meta_question_keywords = ["what did i ask", "previous question", "earlier question", 
+                                 "what were we discussing", "what was my question"]
+        
+        is_meta_question = any(keyword in query.lower() for keyword in meta_question_keywords)
+        
+        if content and not is_meta_question:
             max_chars = 3000
             trimmed_content = content[:max_chars]
 
-            prompt = f"""You are a helpful assistant. Based on the information below, answer the question clearly.
-You can share the news if asked for it. Always include the source of your information by citing the article titles at the end of your response. Add links to the articles if possible.
+            query = f"""Based on the following articles, answer the query clearly. 
+Always include sources and links at the end if relevant.
+Also remember our conversation history when responding.
 
 ---CONTENT---
 {trimmed_content}
 
 ---QUESTION---
-{query}
-"""
-            headers = {
-                "Authorization": f"Bearer {TOGETHER_API_KEY}",
-                "Content-Type": "application/json"
-            }
+{query}"""
 
-            payload = {
-                "model": "mistralai/Mistral-7B-Instruct-v0.2",
-                "messages": [
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt}
-                ],
-                "max_tokens": 500,
-                "temperature": 0.7
-            }
-
-            print("Sending Together API request with context...")
-            response = requests.post("https://api.together.xyz/v1/chat/completions", headers=headers, json=payload)
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"].strip()
+            print("Sending to Together API via LangChain memory-enabled pipeline with context...")
 
         else:
-            print("Using memory-based assistant with RunnableWithMessageHistory...")
-            response = _chat_with_memory.invoke(
-                {"input": query},
-                config={"configurable": {"session_id": session_id}}
-            )
-            return response.content
+            if is_meta_question:
+                print("Detected meta-question about conversation - using memory only...")
+            else:
+                print("Using memory-based assistant with no extra content...")
+
+        response = _chat_with_memory.invoke(
+            {"input": query},
+            config={"configurable": {"session_id": session_id}}
+        )
+        return response.content
 
     except Exception as e:
         print("Error in generate_flexible_answer:", str(e))
         return "Sorry, I encountered an error while generating the response."
+
 
 
