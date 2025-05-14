@@ -30,7 +30,7 @@ def query():
     print(f"First 200 chars of scraped content: {content[:200]}...")
 
     # Step 3: Generate answer with memory
-    answer = generate_flexible_answer(user_query, session_id=session_id)
+    answer = generate_flexible_answer(user_query, session_id=session_id, content=content)
     return jsonify({"answer": str(answer)})
 
 
